@@ -36,7 +36,18 @@ defmodule ExUnitJsonFormatter do
     {:noreply, state}
   end
 
+  def handle_cast({:suite_finished, run_stats}, state) do
+    ["end",format_stats(state, run_stats.run, run_stats.load)]
+    |> Poison.encode!
+    |> IO.puts
+    {:noreply, state}
+  end
+
   def handle_cast({:case_started, _}, state) do
+    {:noreply, state}
+  end
+
+  def handle_cast({:module_started, _}, state) do
     {:noreply, state}
   end
 
@@ -47,7 +58,18 @@ defmodule ExUnitJsonFormatter do
     {:noreply, state}
   end
 
+  def handle_cast({:module_finished, test_case = %ExUnit.TestCase{state: {:failed, failure}}}, state) do
+    ["fail", format_test_case_failure(test_case, failure)]
+    |> Poison.encode!
+    |> IO.puts
+    {:noreply, state}
+  end
+
   def handle_cast({:case_finished, _}, state) do
+    {:noreply, %{state | case_counter: state[:case_counter] + 1}}
+  end
+
+  def handle_cast({:module_finished, _}, state) do
     {:noreply, %{state | case_counter: state[:case_counter] + 1}}
   end
 
